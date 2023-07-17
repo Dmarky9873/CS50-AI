@@ -9,16 +9,23 @@ BKnave = Symbol("B is a Knave")
 CKnight = Symbol("C is a Knight")
 CKnave = Symbol("C is a Knave")
 
-# XOR = And(Or(P, Q)), Not(And(P, Q)))
+# XOR = And(Or(P, Q)), Not(And(P, Q))
+
+
+def XOR(P, Q):
+    return And(Or(P, Q), Not(And(P, Q)))
+
+
+# Makes sure that XKnight and XKnave cannot coexist where X is A B and C
+default_rules = And(XOR(AKnight, AKnave), XOR(
+    BKnight, BKnave), XOR(CKnight, CKnave))
 
 
 # Puzzle 0
 # A says "I am both a knight and a knave."
 knowledge0 = And(
     # Default rules
-    And(And(Or(AKnight, AKnave), Not(And(AKnight, AKnave))),
-        And(Or(BKnight, BKnave), Not(And(BKnight, BKnave))),
-        And(Or(CKnight, CKnave), Not(And(CKnight, CKnave)))),
+    default_rules,
 
     # This is saying that if A were a knight, A would be both
     # a knight and a knave, but if A were a knave, A would be
@@ -39,9 +46,7 @@ knowledge0 = And(
 # B says nothing.
 knowledge1 = And(
     # Default rules
-    And(And(Or(AKnight, AKnave), Not(And(AKnight, AKnave))),
-        And(Or(BKnight, BKnave), Not(And(BKnight, BKnave))),
-        And(Or(CKnight, CKnave), Not(And(CKnight, CKnave)))),
+    default_rules,
 
     # This is saying that if A were a Knight then both A and
     # B would have to be Knaves, but if A were a Knave then
@@ -65,9 +70,7 @@ knowledge1 = And(
 # B says "We are of different kinds."
 knowledge2 = And(
     # Default rules
-    And(And(Or(AKnight, AKnave), Not(And(AKnight, AKnave))),
-        And(Or(BKnight, BKnave), Not(And(BKnight, BKnave))),
-        And(Or(CKnight, CKnave), Not(And(CKnight, CKnave)))),
+    default_rules,
 
     # This is saying that if A were to be a knight then B would
     # have to be a Knight too or A and B have to be Knaves. Or
@@ -96,7 +99,31 @@ knowledge2 = And(
 # B says "C is a knave."
 # C says "A is a knight."
 knowledge3 = And(
-    # TODO
+    # Default rules
+    default_rules,
+
+    # If A is a knight, then B would have to be a Knave because it is impossible
+    # for a character to assert that it is a Knave
+    Implication(AKnight, BKnave),
+    Implication(AKnave, BKnave),
+
+    # If B is a knight then C is a Knave and vice versa
+    Implication(BKnight, CKnave),
+    Implication(BKnave, CKnight),
+
+    # If C is a Knight then A is a Knight and vice versa
+    Implication(CKnight, AKnight),
+    Implication(CKnave, AKnave)
+
+    # Logic:
+    # AKnight → BKnave
+    # AKnave → BKnight
+    # BKnight → CKnave
+    # BKnave → CKnight
+    # CKnight → AKnight
+    # CKnave → AKnave
+
+    # Therefore B has to be a Knave because it would cause a contradiction otherwise
 )
 
 
