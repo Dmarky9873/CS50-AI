@@ -248,13 +248,8 @@ class MinesweeperAI():
             mines = copy.deepcopy(sentence.known_mines())
             safes = copy.deepcopy(sentence.known_safes())
 
-            # If there are any mines or safes, add them to our list and update them within the sentence they are in.
-            if mines:
-                for mine in mines:
-                    self.mark_mine(mine)
-            if safes:
-                for safe in safes:
-                    self.mark_safe(safe)
+            # Tells all the sentences this new information of the new mines and safes.
+            self.update_mines_safes(mines, safes)
 
         # ! Makes inferences based on existing knowledge know that we have more information.
         # Checks to see if two sentences are subsets, and if they are, creates a new sentence based on that information
@@ -271,6 +266,7 @@ class MinesweeperAI():
                     mines = new_sentence.known_mines()
                     safes = new_sentence.known_safes()
 
+                    # Updates all sentences with the new information
                     self.update_mines_safes(mines, safes)
 
     def update_mines_safes(self, mines, safes):
@@ -282,6 +278,7 @@ class MinesweeperAI():
             mines (set): set of mines
             safes (set): set of safes
         """
+        # If there are mines pr safes to add, tells all sentences about them.
         if mines:
             for mine in mines:
                 self.mark_mine(mine)
