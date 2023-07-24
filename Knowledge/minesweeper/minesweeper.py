@@ -216,13 +216,13 @@ class MinesweeperAI():
             count (`int`): the integer amount of neighbouring cells that have mines in them.
         """
 
-        # ! Marks the cell as a move
+        # * Marks the cell as a move
         self.moves_made.add(cell)
 
-        # ! Marks the cell as safe
+        # * Marks the cell as safe
         self.mark_safe(cell)
 
-        # ! Adds a new sentence to the AI's KB because we know have new info, we know how many mines there are for a set of 8 cells.
+        # * Adds a new sentence to the AI's KB because we know have new info, we know how many mines there are for a set of 8 cells.
         # Gets all the neighbours for a cell
         neighbours = self.get_neighbours(cell)
         # Creates a deep copy of the count because we will need to submit it when creating a new sentence, plus we are changing it when doing calculations based on info we already have in our KB.
@@ -240,7 +240,7 @@ class MinesweeperAI():
         sentence = Sentence(neighbours, new_count)
         self.knowledge.append(sentence)
 
-        # ! Marks any additional cells as safes or mines if it can be concluded based on the AI's knowledge base now that we have new information.
+        # * Marks any additional cells as safes or mines if it can be concluded based on the AI's knowledge base now that we have new information.
 
         # Iterates through each sentence in the KB and checks to see if we have new mines or safes to add to our sets with the info we added.
         for sentence in self.knowledge:
@@ -251,7 +251,7 @@ class MinesweeperAI():
             # Tells all the sentences this new information of the new mines and safes.
             self.update_mines_safes(mines, safes)
 
-        # ! Makes inferences based on existing knowledge know that we have more information.
+        # * Makes inferences based on existing knowledge know that we have more information.
         # Checks to see if two sentences are subsets, and if they are, creates a new sentence based on that information
         # Example: if we know set {A, B, C, D} has 3 mines, and we know that set {C, D} has one mine, then we know that set {A, B} has 2 mines, and by extension, both A and B are mines!
         for sentence_A in self.knowledge:
@@ -278,23 +278,24 @@ class MinesweeperAI():
             mines (set): set of mines
             safes (set): set of safes
         """
-        # If there are mines pr safes to add, tells all sentences about them.
+        # If there are mines or safes to add, tells all sentences about them.
         if mines:
             for mine in mines:
                 self.mark_mine(mine)
-
         if safes:
             for safe in safes:
                 self.mark_safe(safe)
 
     def make_safe_move(self):
-        """
-        Returns a safe cell to choose on the Minesweeper board.
+        """Returns a safe cell to choose on the Minesweeper board.
         The move must be known to be safe, and not already a move
         that has been made.
 
-        This function may use the knowledge in self.mines, self.safes
-        and self.moves_made, but should not modify any of those values.
+        This function will use the knowledge in self.mines, self.safes
+        and self.moves_made, but will not modify any of those values.
+
+        Returns:
+            tuple: returns a tuple (x and y coordinate) of the move you should make
         """
         for move in self.safes:
             if not move in self.moves_made:
@@ -303,10 +304,10 @@ class MinesweeperAI():
         return None
 
     def get_possible_moves(self):
-        """Generates all possible moves that is not guarenteed to be a mine and hasn't been tried before.
+        """Generates all possible moves that is not guarenteed to be a mine, but could be one and hasn't been tried before.
 
         Returns:
-            set: Returns a set of all possible moves as stated above. Returns None if no possible moves are available given the above criteria.
+            set or None: Returns a set of all possible moves as stated above. Returns None if no possible moves are available given the above criteria.
         """
 
         # Creates an empty set
