@@ -2,6 +2,7 @@ import os
 import random
 import re
 import sys
+import copy
 
 DAMPING = 0.85
 SAMPLES = 10000
@@ -126,16 +127,85 @@ def sample_pagerank(corpus: dict, damping_factor: float, n: int):
     return pageRanks
 
 
-def iterate_pagerank(corpus, damping_factor):
+def iterate_pagerank(corpus: dict, damping_factor: float):
     """
-    Return PageRank values for each page by iteratively updating
+    Returns the PageRank values for each page by iteratively updating
     PageRank values until convergence.
 
-    Return a dictionary where keys are page names, and values are
+    Returns:
+        `dict()`: Returns a dictionary where keys are page names, and values are
     their estimated PageRank value (a value between 0 and 1). All
-    PageRank values should sum to 1.
+    PageRank values will sum to 1.
     """
-    pass
+    pages = list(corpus.keys())
+    pageRank = dict()
+    d = damping_factor
+    N = len(pages)
+
+    # Goes through each page and sets their pagerank to be 1/N at the beginning.
+    for page in pages:
+        pageRank[page] = 1/N
+
+    # Keeps repeating the formula until they converge, increasing accuracy
+    while True:
+        # Sets a veriable to the previous pagerank to test for convergence at the end
+        prevPageRank = copy.deepcopy(pageRank)
+
+        # Goes through each page and does the formula and records the new variable in the pagerank dict
+        for page in pages:
+            pageRank[page] = ((1 - d)/N) + \
+                (d*(pageRankSummation(page, corpus, pageRank)))
+
+        # Checks to see if there is a marginal difference
+        marginalDiff = 0.001
+        hasMarginalDiff = True
+        for page in pages:
+            if abs(prevPageRank[page] - pageRank[page]) >= marginalDiff:
+                hasMarginalDiff = False
+
+        # If there is a marginal difference, returns the pagerank dictionary
+        if hasMarginalDiff:
+            return pageRank
+
+
+def numLinks(page: str, corpus: dict):
+    """Gets the amount of links in a given page.
+
+    Args:
+        page (`str()`): The page whos number of links you are trying to find.
+        corpus (`dict()`): The dictionary of all pages and their links.
+
+    Returns:
+        `int()`: The integer number of links on a given page.
+    """
+    return len(corpus[page])
+
+
+def pageRankSummation(page: str, corpus: dict, pagerank: dict):
+    """Does the summation part of the PageRank formula.
+
+    Args:
+        page (`str()`): Page whos Pagerank you are trying to find.
+        corpus (`dict()`): Dictionary of all the pages and their links.
+        pagerank (`dict()`): Dictionary of PageRank of all the different pages.
+
+    Returns:
+        `float()`: Returns the float of the result of the summation.
+    """
+    accum = 0
+    pages = list(corpus.keys())
+    pagesThatLink = set()
+
+    # Finds all the pages that link to `page`
+    for p in pages:
+        if page in corpus[p]:
+            pagesThatLink.add(p)
+
+    # Accumulates all the pageranks of the pages and divides them by the number of links within that page.
+    for p in pagesThatLink:
+        accum += pagerank[p]/numLinks(p, corpus)
+
+    return float(accum)
 
 
 if __name__ == "__main__":
