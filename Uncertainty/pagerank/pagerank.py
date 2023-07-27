@@ -83,7 +83,7 @@ def transition_model(corpus: dict, page: str, damping_factor: float):
     return probabilities
 
 
-def sample_pagerank(corpus, damping_factor, n):
+def sample_pagerank(corpus: dict, damping_factor: float, n: int):
     """Returns a PageRank value for each page by sampling `n` pages
     according to transition model, starting with a page at random.
 
@@ -93,20 +93,25 @@ def sample_pagerank(corpus, damping_factor, n):
     PageRank values should sum to 1.
     """
 
+    # Puts all the different pages into a dictionary and sets all the values to 0
     pages = corpus.keys()
     pageRanks = dict()
     for page in pages:
         pageRanks[page] = 0
 
+    # Chooses a random page to start at
     currPage = random.choice(list(pages))
 
+    # Samples through each page N times with damping_factor chance of picking a random page
     for i in range(n):
+        # Adds one to the current page that was chosen and preps the next iteration
         pageRanks[currPage] += 1
         model = transition_model(corpus, currPage, damping_factor)
         num = random.random()
-
         modelPages = model.keys()
         accum = 0
+
+        # Goes through each page within the model and checks whether it was chosen by the random number, if so sets it as the currPage
         for modelPage in modelPages:
             accum += model[modelPage]
             if num <= accum:
