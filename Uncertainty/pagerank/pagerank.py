@@ -118,6 +118,7 @@ def sample_pagerank(corpus: dict, damping_factor: float, n: int):
                 currPage = modelPage
                 break
 
+    # Formats the dictionary properly
     for page in pageRanks:
         while str(pageRanks[page])[0] != '0':
             pageRanks[page] = pageRanks[page]/10
