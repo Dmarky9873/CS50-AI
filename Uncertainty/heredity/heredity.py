@@ -144,20 +144,58 @@ def joint_probability(people, one_gene, two_genes, have_trait):
 
 def update(probabilities, one_gene, two_genes, have_trait, p):
     """
-    Add to `probabilities` a new joint probability `p`.
-    Each person should have their "gene" and "trait" distributions updated.
+    Adds to `probabilities` a new joint probability `p`.
+    Each person will have their "gene" and "trait" distributions updated.
     Which value for each distribution is updated depends on whether
     the person is in `have_gene` and `have_trait`, respectively.
     """
-    raise NotImplementedError
+    # Gets the list of names of all people.
+    people = list(probabilities.keys())
+
+    # Goes through adding p to the required places.
+    for person in people:
+        if person in one_gene:
+            probabilities[person]["gene"][1] += p
+        elif person in two_genes:
+            probabilities[person]["gene"][2] += p
+        else:
+            probabilities[person]["gene"][0] += p
+
+        if person in have_trait:
+            probabilities[person]["trait"][True] += p
+        else:
+            probabilities[person]["trait"][False] += p
 
 
 def normalize(probabilities):
     """
-    Update `probabilities` such that each probability distribution
+    Updates `probabilities` such that each probability distribution
     is normalized (i.e., sums to 1, with relative proportions the same).
     """
-    raise NotImplementedError
+    # Gets the list of all people in the dict.
+    people = list(probabilities.keys())
+
+    # Goes through each person and makes all the probabilities sum to one while keeping the proportions the same.
+    for person in people:
+        # How we do this is by dividing the value of each probability by the sum of all probabilies in that category.
+        geneSum = probabilities[person]["gene"][0] + \
+            probabilities[person]["gene"][1] + probabilities[person]["gene"][2]
+
+        # We also round each value to the nearest hundreth to take care of floating point errors.
+        probabilities[person]["gene"][0] = round(
+            probabilities[person]["gene"][0]/geneSum, 2)
+        probabilities[person]["gene"][1] = round(
+            probabilities[person]["gene"][1]/geneSum, 2)
+        probabilities[person]["gene"][2] = round(
+            probabilities[person]["gene"][2]/geneSum, 2)
+
+        traitSum = probabilities[person]["trait"][True] + \
+            probabilities[person]["trait"][False]
+
+        probabilities[person]["trait"][True] = round(
+            probabilities[person]["trait"][True]/traitSum, 2)
+        probabilities[person]["trait"][False] = round(
+            probabilities[person]["trait"][False]/traitSum, 2)
 
 
 if __name__ == "__main__":
