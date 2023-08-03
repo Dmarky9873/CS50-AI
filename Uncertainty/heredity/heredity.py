@@ -1,7 +1,6 @@
 import csv
 import itertools
 import sys
-import random
 
 PROBS = {
 
@@ -129,40 +128,57 @@ def powerset(s):
     ]
 
 
-def joint_probability(people, one_gene, two_genes, have_trait):
-    """
-    Compute and return a joint probability.
+def joint_probability(people: dict, one_gene: list, two_genes: list, have_trait: list):
+    """Computes and returns a joint probability.
 
-    The probability returned should be the probability that
+    The probability returned will be the probability that
         * everyone in set `one_gene` has one copy of the gene, and
         * everyone in set `two_genes` has two copies of the gene, and
         * everyone not in `one_gene` or `two_gene` does not have the gene, and
         * everyone in set `have_trait` has the trait, and
         * everyone not in set` have_trait` does not have the trait.
+
+    Returns:
+        float: The joint probability (see above).
     """
+
+    # Gets the list of all people who don't have any of the gene.
     no_genes = []
     names = list(people.keys())
     for name in names:
+        # Checks to see if the name is in the one_gene or two_gene list, and if not adds it to the no_genes list.
         if (name not in one_gene) and (name not in two_genes):
             no_genes.append(name)
 
+    # Set of all the probabilities.
     odds = set()
 
+    # Goes through for each person within the one_gene list and calculates the odds of that person having one gene and the odds that they exhibit the trait.
     for person in one_gene:
+        # Checks if the person has the trait
         if person in have_trait:
             hastrait = True
         else:
             hastrait = False
+
+        # If the person doesn't have parents we just calculate the odds of someone having one gene then multiply that with the odds of them exhibiting the trait or not.
+        # If the person has parents we have to calculate the odds of the parents only passing on one gene then multiply it with the odds of them exhibiting the trait or not.
         if hasParents(people, person):
+            # Gets the parents and the odds of the parents passing on a gene.
             parents = getParents(people, person)
             parentsOdds = getParentsOdds(parents, one_gene, two_genes)
+
+            # Calculates the odds of one parent giving and the other parent not giving.
             oddsOfGettingOne = parentsOdds['mother-giving']*parentsOdds['father-not-giving'] + \
                 parentsOdds['father-giving']*parentsOdds["mother-not-giving"]
 
+            # Adds that probability to the set of all probabilites.
             odds.add(oddsOfGettingOne*PROBS["trait"][1][hastrait])
         else:
+            # Does what we outlined above happens if the person has no parents known.
             odds.add(PROBS["gene"][1]*PROBS["trait"][1][hastrait])
 
+    # The next two loops does the same thing as the first one but for people with two genes and for people with no genes.
     for person in two_genes:
         if person in have_trait:
             hastrait = True
@@ -193,6 +209,7 @@ def joint_probability(people, one_gene, two_genes, have_trait):
         else:
             odds.add(PROBS["gene"][0]*PROBS["trait"][0][hastrait])
 
+    # Calculates the odds of all the things in odds happening together (joint probability) and returns it.
     accum = 1
     for num in odds:
         accum *= num
@@ -200,7 +217,7 @@ def joint_probability(people, one_gene, two_genes, have_trait):
     return accum
 
 
-def update(probabilities, one_gene, two_genes, have_trait, p):
+def update(probabilities: dict, one_gene: list, two_genes: list, have_trait: list, p: float):
     """
     Adds to `probabilities` a new joint probability `p`.
     Each person will have their "gene" and "trait" distributions updated.
@@ -240,7 +257,7 @@ def update(probabilities, one_gene, two_genes, have_trait, p):
                 probabilities[person]["trait"][False] = p
 
 
-def normalize(probabilities):
+def normalize(probabilities: dict):
     """
     Updates `probabilities` such that each probability distribution
     is normalized (i.e., sums to 1, with relative proportions the same).
@@ -281,6 +298,7 @@ def hasParents(people: dict, person: str):
     Returns:
         bool: True if `person` has parents and False if otherwise
     """
+    # Pretty self explanitory
     if people[person]['mother'] == None and people[person]['father'] == None:
         return False
     return True
