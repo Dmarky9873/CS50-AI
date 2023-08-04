@@ -328,6 +328,7 @@ class CrosswordCreator():
 
         var = self.select_unassigned_variable(assignment)
 
+        # Recursively checks if every neighbor is consistent with each other and if each assignment works.
         for value in self.order_domain_values(var, assignment):
             assignment[var] = value
             if self.consistent(assignment):
