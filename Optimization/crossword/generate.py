@@ -227,7 +227,34 @@ class CrosswordCreator():
         The first value in the list, for example, should be the one
         that rules out the fewest values among the neighbors of `var`.
         """
-        raise NotImplementedError
+        # Gets all the neighbours and all the variables that have already been assigned values
+        neighbours = self.crossword.neighbors(var)
+        alreadyAssigned = assignment.keys()
+
+        wordsValues = dict()
+
+        # Gets all the words that are able to be used by var
+        words = self.domains[var]
+
+        # Goes through each word and checks how many words in each neighbours domain would be unuseable if that word were to be used.
+        for word in words:
+            wordVal = 0
+            for neighbour in neighbours:
+                # If the neighbour already has a value assigned to it there is no point in checking because the outcome would be the same regardless.
+                if neighbour not in alreadyAssigned:
+                    overlap = self.crossword.overlaps[var, neighbour]
+                    neighbourWords = self.domains[neighbour]
+
+                    # Counts how many words in the domain don't match
+                    for neighbourWord in neighbourWords:
+                        if word[overlap[0]] != neighbourWord[overlap[1]]:
+                            wordVal += 1
+
+            # That count is then assigned to that word and recorded in the words values dictionary.
+            wordsValues[word: wordVal]
+
+        # Sorts all the items based on the values and returns that sorted list.
+        return self.sortBasedOnDict(wordsValues)
 
     def select_unassigned_variable(self, assignment):
         """
@@ -249,6 +276,26 @@ class CrosswordCreator():
         If no assignment is possible, return None.
         """
         raise NotImplementedError
+
+    def sortBasedOnDict(dictionary: dict):
+        """Takes a dictionary and returns the keys sorted from least to greatest
+        based on their integer values.
+
+        Args:
+            dictionary (dict): Dictionary where the keys are strings and values are integers.
+
+        Returns:
+            list: list of the keys sorted based on their values from least to greatest.
+        """
+        # Sort the dictionary values from least to greatest
+        itemsSorted = sorted(dictionary.items(), key=lambda item: item[1])
+
+        # Adds all the keys to the list based on the order that their values were sorted
+        keysSorted = []
+        for item in itemsSorted:
+            keysSorted.append(item[0])
+
+        return keysSorted
 
 
 def main():
