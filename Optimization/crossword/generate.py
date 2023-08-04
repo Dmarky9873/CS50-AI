@@ -130,16 +130,16 @@ class CrosswordCreator():
         madeChanges = False
         foundAWord = True
         for x_word in copy.deepcopy(self.domains[x]):
-            # If there was no coresponding word, we remove that word from x's domain, and we update that we have made changes to x's domain.
-            if not foundAWord:
-                madeChanges = True
-                self.domains[x].remove(x_word)
             foundAWord = False
             for y_word in self.domains[y]:
                 # If the overlap is the same letter, then it works and we can move onto the next word.
                 if x_word[overlap[0]] == y_word[overlap[1]]:
                     foundAWord = True
                     break
+            # If there was no coresponding word, we remove that word from x's domain, and we update that we have made changes to x's domain.
+            if not foundAWord:
+                madeChanges = True
+                self.domains[x].remove(x_word)
 
         return madeChanges
 
@@ -304,17 +304,25 @@ class CrosswordCreator():
 
     def backtrack(self, assignment):
         """
-        Using Backtracking Search, take as input a partial assignment for the
+
+        """
+        """Using Backtracking Search, take as input a partial assignment for the
         crossword and return a complete assignment if possible to do so.
 
         `assignment` is a mapping from variables (keys) to words (values).
 
         If no assignment is possible, return None.
+
+        Returns:
+            None: Returns None if no assignment is possible
+            Dict: Returns `assignment` which is a mapping from variables to words.
         """
+        # If the assignment is empty, we make every variable map to None
         if assignment == dict():
             for var in self.crossword.variables:
                 assignment[var] = None
 
+        # If the assignment is complete we return the assignment
         if self.assignment_complete(assignment):
             return assignment
 
