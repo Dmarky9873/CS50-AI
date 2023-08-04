@@ -76,7 +76,8 @@ class CrosswordCreator():
                 if self.crossword.structure[i][j]:
                     draw.rectangle(rect, fill="white")
                     if letters[i][j]:
-                        _, _, w, h = draw.textbbox((0, 0), letters[i][j], font=font)
+                        _, _, w, h = draw.textbbox(
+                            (0, 0), letters[i][j], font=font)
                         draw.text(
                             (rect[0][0] + ((interior_size - w) / 2),
                              rect[0][1] + ((interior_size - h) / 2) - 10),
@@ -99,7 +100,13 @@ class CrosswordCreator():
         (Remove any values that are inconsistent with a variable's unary
          constraints; in this case, the length of the word.)
         """
-        raise NotImplementedError
+
+        # Checks if a word in a variable's domain isn't the variable's length.
+        for var in self.crossword.variables:
+            for word in self.domains[var]:
+                # If the word isn't the same length, it removes the word from the domain.
+                if len(word) != var.length:
+                    self.domains[var].remove(word)
 
     def revise(self, x, y):
         """
@@ -110,7 +117,30 @@ class CrosswordCreator():
         Return True if a revision was made to the domain of `x`; return
         False if no revision was made.
         """
-        raise NotImplementedError
+
+        # Gets the overlap between the two variables.
+        overlap = self.crossword.overlaps[x, y]
+
+        # If there is no overlap we don't need to do anything so we return no changes made.
+        if overlap == None:
+            return False
+
+        # Goes through each word in x's domain and checks to see if there is a coresponding word in y's domain that satisfies the overlap condition.
+        madeChanges = False
+        foundAWord = True
+        for x_word in self.domains[x]:
+            # If there was no coresponding word, we remove that word from x's domain, and we update that we have made changes to x's domain.
+            if not foundAWord:
+                madeChanges = True
+                self.domains[x].remove(x_word)
+            foundAWord = False
+            for y_word in self.domains[y]:
+                # If the overlap is the same letter, then it works and we can move onto the next word.
+                if x_word[overlap[0]] == y_word[overlap[1]]:
+                    foundAWord = True
+                    break
+
+        return madeChanges
 
     def ac3(self, arcs=None):
         """
