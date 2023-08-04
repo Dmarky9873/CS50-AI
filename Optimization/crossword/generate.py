@@ -143,15 +143,40 @@ class CrosswordCreator():
         return madeChanges
 
     def ac3(self, arcs=None):
-        """
-        Update `self.domains` such that each variable is arc consistent.
-        If `arcs` is None, begin with initial list of all arcs in the problem.
-        Otherwise, use `arcs` as the initial list of arcs to make consistent.
+        """Updates `self.domains` such that each variable is arc consistent.
+        If `arcs` is None, begins with initial list of all arcs in the problem.
+        Otherwise, uses `arcs` as the initial list of arcs to make consistent.
 
-        Return True if arc consistency is enforced and no domains are empty;
-        return False if one or more domains end up empty.
+        Returns:
+            bool: Returns `True` if arc consistency is enforced and no domains are empty;
+        returns `False` if one or more domains end up empty.
         """
-        raise NotImplementedError
+
+        # If the arcs haven't been supplied to us, we use every arc in the CSP.
+        if arcs == None:
+            # Goes through each variable in the crossword and add it and its neighbour to the queue
+            queue = list()
+            for var in self.crossword.variables:
+                neighbours = self.crossword.neighbors(var)
+                for neighbour in neighbours:
+                    queue.append((var, neighbour))
+        # If there are arcs supplied, we just use them as the queue.
+        else:
+            queue = arcs
+
+        # Main AC-3 algorithm.
+        while queue != list():
+            # Takes an arc and checks if it is arc-consistent. If it isn't, it makes it arc consistent then checks all its neighbours again to see if no problems have arised.
+            (x, y) = queue.pop(0)
+            if self.revise(x, y):
+                # If the domain is empty then there is no solutions to the problem and we return False.
+                if self.domains[x] == set():
+                    return False
+                for neighbour in self.crossword.neighbors(x) - {y}:
+                    queue.append((neighbour, x))
+
+        # Once the queue is empty we know we have solved the problem and we return True.
+        return True
 
     def assignment_complete(self, assignment):
         """
@@ -175,6 +200,25 @@ class CrosswordCreator():
         Return True if `assignment` is consistent (i.e., words fit in crossword
         puzzle without conflicting characters); return False otherwise.
         """
+
+        variables = list(assignment.keys())
+
+        usedWords = set()
+
+        for var in variables:
+            if assignment[var] in usedWords:
+                return False
+            if len(assignment[var]) != var.length:
+                return False
+            neighbours = self.crossword.neighbors(var)
+            for neighbour in neighbours:
+                overlap = self.crossword.overlaps[var, neighbour]
+                if assignment[var][overlap[0]] != assignment[neighbour][overlap[1]]:
+                    return False
+
+            usedWords.add(assignment[var])
+
+        return True
 
     def order_domain_values(self, var, assignment):
         """
