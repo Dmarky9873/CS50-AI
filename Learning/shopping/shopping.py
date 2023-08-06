@@ -102,7 +102,10 @@ def train_model(evidence, labels):
     Given a list of evidence lists and a list of labels, return a
     fitted k-nearest neighbor model (k=1) trained on the data.
     """
-    raise NotImplementedError
+    model = KNeighborsClassifier(n_neighbors=1)
+    model.fit(evidence, labels)
+
+    return model
 
 
 def evaluate(labels, predictions):
@@ -120,7 +123,23 @@ def evaluate(labels, predictions):
     representing the "true negative rate": the proportion of
     actual negative labels that were accurately identified.
     """
-    raise NotImplementedError
+
+    pred_trues = 0
+    pred_falses = 0
+    real_trues = 0
+    real_falses = 0
+
+    for label, prediction in zip(labels, predictions):
+        if label == 1:
+            real_trues += 1
+            if label == prediction:
+                pred_trues += 1
+        elif label == 0:
+            real_falses += 1
+            if label == prediction:
+                pred_falses += 1
+
+    return (pred_trues/real_trues, pred_falses/real_falses)
 
 
 def getMonthInt(month: str):
@@ -134,7 +153,7 @@ def getMonthInt(month: str):
         return 3
     elif month == 'May':
         return 4
-    elif month == 'Jun':
+    elif month == 'June':
         return 5
     elif month == 'Jul':
         return 6
