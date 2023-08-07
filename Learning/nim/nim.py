@@ -96,12 +96,67 @@ class NimAI():
         best_future = self.best_future_reward(new_state)
         self.update_q_value(old_state, action, old, reward, best_future)
 
+    def result(state, action):
+        """Returns the result of `action` being performed on `state`.
+
+        Args:
+            state (list): list of states of all the values.
+            action (tuple): tuple (i, j) where i is the index where we are performing action j.
+
+        Returns:
+            list: returns the new state after `action` is performed.
+        """
+        # Performs action
+        state[action[0]] -= action[1]
+        return state
+
+    def isWinState(state):
+        """Gets whether or not `state` is a win state.
+
+        Args:
+            state (list): list of all the states of the values in the game.
+
+        Returns:
+            bool: Returns `True` if `state` is a win state and `False` if it is not.
+        """
+        # Loops through each state checking if it holds up with a win state.
+        found1 = False
+        for val in state:
+            # If the value is greater than one then it is impossible to win.
+            if val > 1:
+                return False
+            # If the value is one and we haven't found another value greater than one we set found1 to true and keep iterating.
+            # If we have found another value greater than one we know it is impossible to win.
+            elif val == 1:
+                if found1 == True:
+                    return False
+                found1 = True
+
+        # We know we will win after iterating through everything.
+        return True
+
     def get_q_value(self, state, action):
-        """
-        Return the Q-value for the state `state` and the action `action`.
+        """Returns the Q-value for the state `state` and the action `action`.
         If no Q-value exists yet in `self.q`, return 0.
+
+        Returns:
+            int: 
+            * If it is a state where player will win then returns 1.
+            * If it is a state where player will not win then returns 0.
+            * Returns 0 for all other states.
         """
-        raise NotImplementedError
+
+        # Gets the result of action being performed on state
+        newState = self.result(state, action)
+
+        # If all the values are 0 then the player has lost
+        if all(val == 0 for val in newState):
+            return -1
+        # If it is a winstate then the player has won
+        elif self.isWinState(state):
+            return 1
+
+        return 0
 
     def update_q_value(self, state, action, old_q, reward, future_rewards):
         """
