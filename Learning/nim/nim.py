@@ -138,24 +138,12 @@ class NimAI():
     def get_q_value(self, state, action):
         """Returns the Q-value for the state `state` and the action `action`.
         If no Q-value exists yet in `self.q`, return 0.
-
-        Returns:
-            int: 
-            * If it is a state where player will win then returns 1.
-            * If it is a state where player will not win then returns -1.
-            * Returns 0 for all other states.
         """
 
-        # Gets the result of action being performed on state
-        newState = self.result(state, action)
+        key = (tuple(state), action)
 
-        # If all the values are 0 then the player has lost
-        if all(val == 0 for val in newState):
-            return -1
-        # If it is a winstate then the player has won
-        elif self.isWinState(state):
-            return 1
-
+        if key in self.q:
+            return self.q[key]
         return 0
 
     def update_q_value(self, state, action, old_q, reward, future_rewards):
@@ -241,7 +229,6 @@ class NimAI():
             num = random.random()
 
             if num <= self.epsilon:
-                print("did")
                 return random.choice(list(actions))
         return chooseBestAction()
 
