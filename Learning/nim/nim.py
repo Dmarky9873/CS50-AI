@@ -96,7 +96,7 @@ class NimAI():
         best_future = self.best_future_reward(new_state)
         self.update_q_value(old_state, action, old, reward, best_future)
 
-    def result(state, action):
+    def result(self, state, action):
         """Returns the result of `action` being performed on `state`.
 
         Args:
@@ -110,7 +110,7 @@ class NimAI():
         state[action[0]] -= action[1]
         return state
 
-    def isWinState(state):
+    def isWinState(self, state):
         """Gets whether or not `state` is a win state.
 
         Args:
@@ -142,7 +142,7 @@ class NimAI():
         Returns:
             int: 
             * If it is a state where player will win then returns 1.
-            * If it is a state where player will not win then returns 0.
+            * If it is a state where player will not win then returns -1.
             * Returns 0 for all other states.
         """
 
@@ -173,7 +173,10 @@ class NimAI():
         `alpha` is the learning rate, and `new value estimate`
         is the sum of the current reward and estimated future rewards.
         """
-        raise NotImplementedError
+
+        newQ = old_q + self.alpha*((future_rewards + reward) - old_q)
+
+        self.q[(tuple(state), action)] = newQ
 
     def best_future_reward(self, state):
         """
@@ -185,7 +188,26 @@ class NimAI():
         Q-value in `self.q`. If there are no available actions in
         `state`, return 0.
         """
-        raise NotImplementedError
+
+        # Gets all actions in the given state
+        actions = Nim.available_actions(state)
+
+        rewards = []
+
+        # Goes through adding the value of each action
+        for action in actions:
+            currKey = (tuple(state), action)
+            if currKey in self.q:
+                rewards.append(self.q[currKey])
+            else:
+                rewards.append(0)
+
+        # If there are no actions, returns zero
+        if rewards == []:
+            return 0
+
+        # Returns the most valueable action
+        return max(rewards)
 
     def choose_action(self, state, epsilon=True):
         """
@@ -202,7 +224,26 @@ class NimAI():
         If multiple actions have the same Q-value, any of those
         options is an acceptable return value.
         """
-        raise NotImplementedError
+
+        actions = Nim.available_actions(state)
+
+        def chooseBestAction():
+            best = self.best_future_reward(state)
+            for action in actions:
+                currKey = (tuple(state), action)
+                if currKey not in self.q:
+                    if best == 0:
+                        return action
+                elif self.q[currKey] == best:
+                    return action
+
+        if epsilon:
+            num = random.random()
+
+            if num <= self.epsilon:
+                print("did")
+                return random.choice(list(actions))
+        return chooseBestAction()
 
 
 def train(n):
