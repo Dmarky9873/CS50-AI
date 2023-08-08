@@ -44,6 +44,29 @@ def main():
         print(f"Model saved to {filename}.")
 
 
+def printProgressBar(iteration, total, prefix='', suffix='', decimals=1, length=100, fill='█', printEnd="\r"):
+    """
+    Call in a loop to create terminal progress bar
+    @params:
+        iteration   - Required  : current iteration (Int)
+        total       - Required  : total iterations (Int)
+        prefix      - Optional  : prefix string (Str)
+        suffix      - Optional  : suffix string (Str)
+        decimals    - Optional  : positive number of decimals in percent complete (Int)
+        length      - Optional  : character length of bar (Int)
+        fill        - Optional  : bar fill character (Str)
+        printEnd    - Optional  : end character (e.g. "\r", "\r\n") (Str)
+    """
+    percent = ("{0:." + str(decimals) + "f}").format(100 *
+                                                     (iteration / float(total)))
+    filledLength = int(length * iteration // total)
+    bar = fill * filledLength + '-' * (length - filledLength)
+    print(f'\r{prefix} |{bar}| {percent}% {suffix}', end=printEnd)
+    # Print New Line on Complete
+    if iteration == total:
+        print()
+
+
 def load_data(data_dir):
     """Loads image data from directory `data_dir`.
 
@@ -97,10 +120,17 @@ def load_data(data_dir):
 
     # Goes through each sign and adds all its images to the dictionary formatted as specified in documentation.
     for i in range(NUM_CATEGORIES):
-        # Records the path of this sign
-        signs[i]['path'] = os.path.join(data_dir, i)
+        # Creates places to store the path and images of each sign
+        signs[i] = {
+            # Records the path
+            'path': os.path.join(data_dir, str(i)),
+            # Empty list for the images
+            'images': list()
+        }
 
         currFile = '00000_00000.ppm'
+        os.system('cls')
+        printProgressBar(i, NUM_CATEGORIES)
 
         def getCurrFilePath(file: str):
             """Gets the current file's path given `file`.
@@ -125,11 +155,11 @@ def load_data(data_dir):
             image = cv2.resize(image, (300, 300))
 
             # Adds the image as a numpy ndarray to the images list of sign i.
-            signs[i]['images'].append(np.ndarray(image))
+            signs[i]['images'].append(np.asarray(image))
 
             # Increments to the next file. If we have ran through each file we move to the next sign.
-            if not os.path.exists(getCurrFilePath(incNum(currFile)), False):
-                if not os.path.exists(getCurrFilePath(incNum(currFile)), True):
+            if not os.path.exists(getCurrFilePath(incNum(currFile, False))):
+                if not os.path.exists(getCurrFilePath(incNum(currFile, True))):
                     gotAllImages = True
                 else:
                     currFile = incNum(currFile, True)
@@ -142,8 +172,8 @@ def load_data(data_dir):
     # Goes through each image and adds it to the images list and adds the coresponding sign to the label list at the same index.
     for sign in signs:
         for image in signs[sign]['images']:
-            images.append[image]
-            labels.append[sign]
+            images.append(image)
+            labels.append(sign)
 
     # Returns the two lists as a tuple.
     return (images, labels)
@@ -155,7 +185,32 @@ def get_model():
     `input_shape` of the first layer is `(IMG_WIDTH, IMG_HEIGHT, 3)`.
     The output layer should have `NUM_CATEGORIES` units, one for each category.
     """
-    raise NotImplementedError
+
+    inputShape = (IMG_WIDTH, IMG_HEIGHT, 3)
+
+    inputUnits = 8
+
+    outputUnits = NUM_CATEGORIES
+
+    # Create a neural network
+    model = tf.keras.models.Sequential()
+
+    # Add 2 hidden layers with 8 units, with ReLU activation
+    model.add(tf.keras.layers.Dense(
+        inputUnits, input_shape=inputShape, activation="relu"))
+    model.add(tf.keras.layers.Dense(8))
+
+    # Add output layer with 1 unit, with sigmoid activation
+    model.add(tf.keras.layers.Dense(outputUnits, activation="sigmoid"))
+
+    # Train neural network
+    model.compile(
+        optimizer="adam",
+        loss="binary_crossentropy",
+        metrics=["accuracy"]
+    )
+
+    return model
 
 
 if __name__ == "__main__":
