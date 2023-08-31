@@ -3,6 +3,8 @@ import numpy as np
 import os
 import sys
 import tensorflow as tf
+import math
+from statistics import mean
 
 from sklearn.model_selection import train_test_split
 
@@ -11,6 +13,28 @@ IMG_WIDTH = 30
 IMG_HEIGHT = 30
 NUM_CATEGORIES = 43
 TEST_SIZE = 0.4
+
+
+def get_average_accuracy(testSize, model, x_train, y_train, x_test, y_test):
+    trainingAccuracies = []
+    testingAccuracies = []
+    for i in range(testSize):
+        print("Test", str(i + 1) + '/' + str(testSize) + ':')
+        trainingAccuracy = model.fit(x_train, y_train,
+                                     epochs=EPOCHS, verbose=0).history['accuracy'][EPOCHS - 1]
+        testingAccuracy = model.evaluate(x_test,  y_test, verbose=0)[1]
+        print("Training Accuracy =", trainingAccuracy,
+              "\nTesting Accuracy =", testingAccuracy)
+        trainingAccuracies.append(trainingAccuracy)
+        testingAccuracies.append(testingAccuracy)
+
+    trainingAvg = round(mean(trainingAccuracies)*100, 1)
+    testingAvg = round(mean(testingAccuracies)*100, 1)
+    overfittingIndex = testingAvg - trainingAvg
+
+    print("\n\nTesting Average Accuracy:", str(testingAvg) + '%')
+    print("Training Average Accuracy:", str(trainingAvg) + '%')
+    print("Overfitting Index:", round(overfittingIndex, 1))
 
 
 def main():
@@ -32,10 +56,11 @@ def main():
     model = get_model()
 
     # Fit model on training data
-    model.fit(x_train, y_train, epochs=EPOCHS)
+    # model.fit(x_train, y_train, epochs=EPOCHS)
 
     # Evaluate neural network performance
-    model.evaluate(x_test,  y_test, verbose=2)
+    # model.evaluate(x_test,  y_test, verbose=2)
+    get_average_accuracy(15, model, x_train, y_train, x_test, y_test)
 
     # Save model to file
     if len(sys.argv) == 3:
@@ -130,7 +155,8 @@ def load_data(data_dir):
 
         currFile = '00000_00000.ppm'
         os.system('cls')
-        printProgressBar(i, NUM_CATEGORIES)
+        printProgressBar(i, NUM_CATEGORIES,
+                         prefix="Loading files...\nCurrent sign: " + str(i))
 
         def getCurrFilePath(file: str):
             """Gets the current file's path given `file`.
@@ -152,7 +178,7 @@ def load_data(data_dir):
         while not gotAllImages:
             # Reads the image and resizes it to 300x300 (width, height).
             image = cv2.imread(getCurrFilePath(currFile))
-            image = cv2.resize(image, (300, 300))
+            image = cv2.resize(image, (IMG_WIDTH, IMG_HEIGHT))
 
             # Adds the image as a numpy ndarray to the images list of sign i.
             signs[i]['images'].append(np.asarray(image))
@@ -186,27 +212,42 @@ def get_model():
     The output layer should have `NUM_CATEGORIES` units, one for each category.
     """
 
-    inputShape = (IMG_WIDTH, IMG_HEIGHT, 3)
-
-    inputUnits = 8
-
-    outputUnits = NUM_CATEGORIES
-
     # Create a neural network
-    model = tf.keras.models.Sequential()
+    model = tf.keras.models.Sequential([
+        # Convolutional layer. Learn 32 filters using a 3x3 kernel
+        tf.keras.layers.Conv2D(
+            filters=128, kernel_size=(3, 3), activation="relu", input_shape=(IMG_WIDTH, IMG_HEIGHT, 3)
+        ),
+        tf.keras.layers.Conv2D(
+            filters=128, kernel_size=(3, 3), activation="relu"
+        ),
+        # Max-pooling layer, using 2x2 pool size
+        tf.keras.layers.MaxPooling2D(pool_size=(2, 2)),
 
-    # Add 2 hidden layers with 8 units, with ReLU activation
-    model.add(tf.keras.layers.Dense(
-        inputUnits, input_shape=inputShape, activation="relu"))
-    model.add(tf.keras.layers.Dense(8))
+        # Flatten units
+        tf.keras.layers.Flatten(),
+        tf.keras.layers.Dropout(0.5),
 
-    # Add output layer with 1 unit, with sigmoid activation
-    model.add(tf.keras.layers.Dense(outputUnits, activation="sigmoid"))
+        # Adds hidden layers
+        tf.keras.layers.Dense(
+            math.sqrt(((IMG_WIDTH*IMG_HEIGHT*3)*NUM_CATEGORIES)), activation="relu"),
+        tf.keras.layers.Dense(
+            math.sqrt(((IMG_WIDTH*IMG_HEIGHT*3)*NUM_CATEGORIES)), activation="relu"),
+
+        tf.keras.layers.Dense(
+            math.sqrt(((IMG_WIDTH*IMG_HEIGHT*3)*NUM_CATEGORIES)), activation="relu"),
+
+        tf.keras.layers.Dense(
+            math.sqrt(((IMG_WIDTH*IMG_HEIGHT*3)*NUM_CATEGORIES)), activation="relu"),
+
+        # Add an output layer with output units for all signs
+        tf.keras.layers.Dense(NUM_CATEGORIES, activation="softmax")
+    ])
 
     # Train neural network
     model.compile(
         optimizer="adam",
-        loss="binary_crossentropy",
+        loss="categorical_crossentropy",
         metrics=["accuracy"]
     )
 

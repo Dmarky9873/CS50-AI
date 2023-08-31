@@ -1,9 +1,3 @@
-x = {
-    1: 'a',
-    2: 'a',
-    3: 'a'
-}
 
-
-for y in x:
+for y in range(3):
     print(y)
