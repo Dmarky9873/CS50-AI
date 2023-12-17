@@ -216,7 +216,7 @@ def update(probabilities, one_gene, two_genes, have_trait, p):
     # Goes through adding p to the required places.
     for person in people:
         if person in one_gene:
-            if probabilities[person]["gene"][0] != None:
+            if probabilities[person]["gene"][0] is not None:
                 probabilities[person]["gene"][1] += p
             else:
                 probabilities[person]["gene"][0] = p
