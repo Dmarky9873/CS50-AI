@@ -21,9 +21,6 @@ def main():
     for page in sorted(ranks):
         print(f"  {page}: {ranks[page]:.4f}")
 
-    # print(transition_model(
-    #     {"1.html": {"2.html", "3.html"}, "2.html": {"3.html"}, "3.html": {"2.html"}}, "1.html", 0.85))
-
 
 def crawl(directory):
     """
@@ -68,21 +65,20 @@ def transition_model(corpus: dict, page: str, damping_factor: float):
         returned probability distribution will sum to 1.
     """
     # Gets the name of all the pages in the corpus and creates an empty dictionary
-    pages = corpus.keys()
     probabilities = dict()
 
     # If the page has no links, return all the pages including the page were looking at
     # currently at an equal probability that adds to one.
     if corpus[page] == {}:
-        for p in pages:
-            probabilities[p] = 1/len(pages)
+        for p in corpus:
+            probabilities[p] = 1/len(corpus)
     else:
         # Sets the current page's probability to be 1 - dampining_factor over the amount of different pages
-        probabilities[page] = (1 - damping_factor)/len(pages)
+        for p in corpus:
+            probabilities[p] = (1 - damping_factor)/len(corpus)
         # Sets the rest of the pages to be an equal amount with dampining factor added
         for p in corpus[page]:
-            probabilities[p] = (1/len(list(corpus[page]))) * \
-                damping_factor + (1 - damping_factor)/len(pages)
+            probabilities[p] += (1/len(corpus[page]))*damping_factor
 
     return probabilities
 
@@ -97,39 +93,23 @@ def sample_pagerank(corpus: dict, damping_factor: float, n: int):
     PageRank values should sum to 1.
     """
 
-    # Puts all the different pages into a dictionary and sets all the values to 0
-    pages = corpus.keys()
-    pageRanks = dict()
-    for page in pages:
-        pageRanks[page] = 0
+    probabilities = dict()
 
-    # Chooses a random page to start at
-    currPage = random.choice(list(pages))
+    for page in corpus.keys():
+        probabilities[page] = 0
 
-    # Samples through each page N times with damping_factor chance of picking a random page
+    curr_page = random.choice(list(corpus.keys()))
+
     for i in range(n):
-        # Adds one to the current page that was chosen and preps the next iteration
-        pageRanks[currPage] += 1
-        model = transition_model(corpus, currPage, damping_factor)
-        num = random.random()
-        modelPages = model.keys()
-        accum = 0
+        model = transition_model(corpus, curr_page, damping_factor)
 
-        # Goes through each page within the model and checks whether it was chosen by the random number, if so sets it as the currPage
-        for modelPage in modelPages:
-            accum += model[modelPage]
-            if num <= accum:
-                currPage = modelPage
-                break
+        for page in probabilities:
+            probabilities[page] = (i*probabilities[page] + model[page])/(i + 1)
 
-    # Formats the dictionary properly
-    for page in pageRanks:
-        while str(pageRanks[page])[0] != '0':
-            pageRanks[page] = pageRanks[page]/10
+        curr_page = random.choices(
+            list(probabilities.keys()), weights=list(model.values()), k=1)[0]
 
-    print(pageRanks)
-
-    return pageRanks
+    return probabilities
 
 
 def iterate_pagerank(corpus: dict, damping_factor: float):
@@ -142,76 +122,53 @@ def iterate_pagerank(corpus: dict, damping_factor: float):
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values will sum to 1.
     """
-    pages = list(corpus.keys())
-    pageRank = dict()
-    d = damping_factor
-    N = len(pages)
+    is_marg_diff = False
+    marg_diff = 0.001
+    probabilities = dict()
+    for page in corpus.keys():
+        probabilities[page] = 1/len(corpus.keys())
 
-    # Goes through each page and sets their pagerank to be 1/N at the beginning.
-    for page in pages:
-        pageRank[page] = 1/N
+    while not is_marg_diff:
+        old_probabilities = copy.deepcopy(probabilities)
 
-    # Keeps repeating the formula until they converge, increasing accuracy
-    while True:
-        # Sets a veriable to the previous pagerank to test for convergence at the end
-        prevPageRank = copy.deepcopy(pageRank)
+        for page in probabilities:
+            probabilities[page] = PR(page, damping_factor, len(
+                list(corpus.keys())), probabilities, corpus)
 
-        # Goes through each page and does the formula and records the new variable in the pagerank dict
-        for page in pages:
-            pageRank[page] = ((1 - d)/N) + \
-                (d*(pageRankSummation(page, corpus, pageRank)))
+        for page, probability in probabilities.items():
+            is_marg_diff = True
+            if abs(probability - old_probabilities[page]) > marg_diff:
+                is_marg_diff = False
 
-        # Checks to see if there is a marginal difference
-        marginalDiff = 0.001
-        hasMarginalDiff = True
-        for page in pages:
-            if abs(prevPageRank[page] - pageRank[page]) >= marginalDiff:
-                hasMarginalDiff = False
-                break
-
-        # If there is a marginal difference, returns the pagerank dictionary
-        if hasMarginalDiff:
-            return pageRank
+    return probabilities
 
 
-def numLinks(page: str, corpus: dict):
-    """Gets the amount of links in a given page.
-
-    Args:
-        page (`str()`): The page whos number of links you are trying to find.
-        corpus (`dict()`): The dictionary of all pages and their links.
-
-    Returns:
-        `int()`: The integer number of links on a given page.
-    """
-    return len(corpus[page])
+def PR(page, d, n, probabilities, corpus):
+    return (1 - d)/n + d*(summation(page, corpus, probabilities))
 
 
-def pageRankSummation(page: str, corpus: dict, pagerank: dict):
-    """Does the summation part of the PageRank formula.
+def summation(page, corpus, probabilities):
+    result = 0
+    for page in pages_that_link(page, corpus):
+        result += probabilities[page]/len(corpus[page])
+    return result
+
+
+def pages_that_link(page, corpus):
+    """Returns all the pages that link to `page` in `corpus`.
 
     Args:
-        page (`str()`): Page whos Pagerank you are trying to find.
-        corpus (`dict()`): Dictionary of all the pages and their links.
-        pagerank (`dict()`): Dictionary of PageRank of all the different pages.
+        `page` (`str`): The name of the page whos pages who link we are trying to find.
+        `corpus` (`dict`): Dictionary of pages and their relationships.
 
     Returns:
-        `float()`: Returns the float of the result of the summation.
+        `set`: The set of all pages that link to `page`.
     """
-    accum = 0
-    pages = list(corpus.keys())
-    pagesThatLink = set()
-
-    # Finds all the pages that link to `page`
-    for p in pages:
+    pages = set()
+    for p in corpus.keys():
         if page in corpus[p]:
-            pagesThatLink.add(p)
-
-    # Accumulates all the pageranks of the pages and divides them by the number of links within that page.
-    for p in pagesThatLink:
-        accum += pagerank[p]/numLinks(p, corpus)
-
-    return float(accum)
+            pages.add(p)
+    return pages
 
 
 if __name__ == "__main__":
