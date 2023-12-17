@@ -1,3 +1,15 @@
+"""_summary_
+
+Raises:
+    NotImplementedError: _description_
+    NotImplementedError: _description_
+    NotImplementedError: _description_
+
+Returns:
+    _type_: _description_
+"""
+
+
 import csv
 import itertools
 import sys
@@ -38,6 +50,8 @@ PROBS = {
 
 
 def main():
+    """_summary_
+    """
 
     # Check for proper usage
     if len(sys.argv) != 2:
@@ -128,99 +142,71 @@ def powerset(s):
     ]
 
 
-def joint_probability(people: dict, one_gene: list, two_genes: list, have_trait: list):
-    """Computes and returns a joint probability.
+def joint_probability(people, one_gene, two_genes, have_trait):
+    """
+    Compute and return a joint probability.
 
-    The probability returned will be the probability that
+    The probability returned should be the probability that
         * everyone in set `one_gene` has one copy of the gene, and
         * everyone in set `two_genes` has two copies of the gene, and
         * everyone not in `one_gene` or `two_gene` does not have the gene, and
         * everyone in set `have_trait` has the trait, and
         * everyone not in set` have_trait` does not have the trait.
+    """
+    joint_prob = 1
+    for person in people:
+        person_prob = 1
+        person_genes = 2 if person in two_genes else 1 if person in one_gene else 0
+        person_trait = person in have_trait
+        person_mother = people[person]['mother']
+        person_father = people[person]['father']
+        if not person_father and not person_mother:
+            person_prob *= PROBS["gene"][person_genes]
+        else:
+            prob_mother_giving = find_prob_inherit(
+                person_mother, one_gene, two_genes)
+            prob_father_giving = find_prob_inherit(
+                person_father, one_gene, two_genes)
+
+            if person_genes == 1:
+                person_prob *= prob_father_giving * \
+                    (1-prob_mother_giving) + \
+                    prob_mother_giving*(1 - prob_father_giving)
+            elif person_genes == 2:
+                person_prob *= prob_father_giving*prob_mother_giving
+            else:
+                person_prob *= (1 - prob_father_giving) * \
+                    (1 - prob_mother_giving)
+
+        person_prob *= PROBS['trait'][person_genes][person_trait]
+
+        joint_prob *= person_prob
+
+    return joint_prob
+
+
+def find_prob_inherit(parent_name, one_gene, two_genes):
+    """_summary_
+
+    Args:
+        parent_name (_type_): _description_
+        one_genes (_type_): _description_
+        two_genes (_type_): _description_
 
     Returns:
-        float: The joint probability (see above).
+        _type_: _description_
     """
-
-    # Gets the list of all people who don't have any of the gene.
-    no_genes = []
-    names = list(people.keys())
-    for name in names:
-        # Checks to see if the name is in the one_gene or two_gene list, and if not adds it to the no_genes list.
-        if (name not in one_gene) and (name not in two_genes):
-            no_genes.append(name)
-
-    # Set of all the probabilities.
-    odds = set()
-
-    # Goes through for each person within the one_gene list and calculates the odds of that person having one gene and the odds that they exhibit the trait.
-    for person in one_gene:
-        # Checks if the person has the trait
-        if person in have_trait:
-            hastrait = True
-        else:
-            hastrait = False
-
-        # If the person doesn't have parents we just calculate the odds of someone having one gene then multiply that with the odds of them exhibiting the trait or not.
-        # If the person has parents we have to calculate the odds of the parents only passing on one gene then multiply it with the odds of them exhibiting the trait or not.
-        if hasParents(people, person):
-            # Gets the parents and the odds of the parents passing on a gene.
-            parents = getParents(people, person)
-            parentsOdds = getParentsOdds(parents, one_gene, two_genes)
-
-            # Calculates the odds of one parent giving and the other parent not giving.
-            oddsOfGettingOne = parentsOdds['mother-giving']*parentsOdds['father-not-giving'] + \
-                parentsOdds['father-giving']*parentsOdds["mother-not-giving"]
-
-            # Adds that probability to the set of all probabilites.
-            odds.add(oddsOfGettingOne*PROBS["trait"][1][hastrait])
-        else:
-            # Does what we outlined above happens if the person has no parents known.
-            odds.add(PROBS["gene"][1]*PROBS["trait"][1][hastrait])
-
-    # The next two loops does the same thing as the first one but for people with two genes and for people with no genes.
-    for person in two_genes:
-        if person in have_trait:
-            hastrait = True
-        else:
-            hastrait = False
-        if hasParents(people, person):
-            parents = getParents(people, person)
-            parentsOdds = getParentsOdds(parents, one_gene, two_genes)
-            oddsOfGettingTwo = parentsOdds['mother-giving'] * \
-                parentsOdds['father-giving']
-
-            odds.add(oddsOfGettingTwo*PROBS['trait'][2][hastrait])
-        else:
-            odds.add(PROBS["gene"][2]*PROBS["trait"][2][hastrait])
-
-    for person in no_genes:
-        if person in have_trait:
-            hastrait = True
-        else:
-            hastrait = False
-        if hasParents(people, person):
-            parents = getParents(people, person)
-            parentsOdds = getParentsOdds(parents, one_gene, two_genes)
-            oddsOfGettingNone = parentsOdds['mother-not-giving'] * \
-                parentsOdds['father-not-giving']
-
-            odds.add(oddsOfGettingNone*PROBS['trait'][0][hastrait])
-        else:
-            odds.add(PROBS["gene"][0]*PROBS["trait"][0][hastrait])
-
-    # Calculates the odds of all the things in odds happening together (joint probability) and returns it.
-    accum = 1
-    for num in odds:
-        accum *= num
-
-    return accum
+    if parent_name in one_gene:
+        return 0.5
+    elif parent_name in two_genes:
+        return 1 - PROBS['mutation']
+    return PROBS['mutation']
 
 
-def update(probabilities: dict, one_gene: list, two_genes: list, have_trait: list, p: float):
+def update(probabilities, one_gene, two_genes, have_trait, p):
     """
-    Adds to `probabilities` a new joint probability `p`.
-    Each person will have their "gene" and "trait" distributions updated.
+    Add to `probabilities` a new joint probability `p`.
+    Each person should have their "gene" and "trait" distributions updated.
     Which value for each distribution is updated depends on whether
     the person is in `have_gene` and `have_trait`, respectively.
     """
@@ -257,9 +243,9 @@ def update(probabilities: dict, one_gene: list, two_genes: list, have_trait: lis
                 probabilities[person]["trait"][False] = p
 
 
-def normalize(probabilities: dict):
+def normalize(probabilities):
     """
-    Updates `probabilities` such that each probability distribution
+    Update `probabilities` such that each probability distribution
     is normalized (i.e., sums to 1, with relative proportions the same).
     """
     # Gets the list of all people in the dict.
@@ -286,69 +272,6 @@ def normalize(probabilities: dict):
             probabilities[person]["trait"][True]/traitSum, 4)
         probabilities[person]["trait"][False] = round(
             probabilities[person]["trait"][False]/traitSum, 4)
-
-
-def hasParents(people: dict, person: str):
-    """Tells you whether or not `person` has parents.
-
-    Args:
-        `people` (dict): Dictionary of all people.
-        `person` (str): Person we are looking at
-
-    Returns:
-        bool: True if `person` has parents and False if otherwise
-    """
-    # Pretty self explanitory
-    if people[person]['mother'] == None and people[person]['father'] == None:
-        return False
-    return True
-
-
-def getParents(people: dict, person: str):
-    """Gets `person`'s parents.
-
-    Args:
-        people (dict): Dictionary of all people.
-        person (str): Person we are looking at
-
-    Returns:
-        dict: Returns a dictionary with `'mother'` being mapped to `person`'s mother and `'father'` being mapped to `person`'s father.
-    """
-    return {'mother': people[person]['mother'], 'father': people[person]['father']}
-
-
-def getParentsOdds(parents: dict, one_gene: list, two_genes: list):
-    """Gets the odds of a parent giving and not giving a gene.
-
-    Args:
-        parents (dict): Dictionary of the names of a person's mother and father.
-        one_gene (list): The list of all people who have one gene.
-        two_genes (list): The list of all people who have two genes.
-
-    Returns:
-        dict: Returns a dictionary mapping the parent's odds to them.
-    """
-    if parents['mother'] in two_genes:
-        oddsOfMomGiving = 1 - PROBS['mutation']
-        oddsOfMomNotGiving = 1 - oddsOfMomGiving
-    elif parents['mother'] in one_gene:
-        oddsOfMomGiving = 0.5
-        oddsOfMomNotGiving = 1 - oddsOfMomGiving
-    else:
-        oddsOfMomGiving = PROBS['mutation']
-        oddsOfMomNotGiving = 1 - oddsOfMomGiving
-
-    if parents['father'] in two_genes:
-        oddsOfDadGiving = 1 - PROBS['mutation']
-        oddsOfDadNotGiving = 1 - oddsOfDadGiving
-    elif parents['father'] in one_gene:
-        oddsOfDadGiving = 0.5
-        oddsOfDadNotGiving = 1 - oddsOfDadGiving
-    else:
-        oddsOfDadGiving = PROBS['mutation']
-        oddsOfDadNotGiving = 1 - oddsOfDadGiving
-
-    return {'father-giving': oddsOfDadGiving, 'father-not-giving': oddsOfDadNotGiving, 'mother-giving': oddsOfMomGiving, 'mother-not-giving': oddsOfMomNotGiving}
 
 
 if __name__ == "__main__":

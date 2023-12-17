@@ -21,6 +21,9 @@ def main():
     for page in sorted(ranks):
         print(f"  {page}: {ranks[page]:.4f}")
 
+    # print(transition_model(
+    #     {"1.html": {"2.html", "3.html"}, "2.html": {"3.html"}, "3.html": {"2.html"}}, "1.html", 0.85))
+
 
 def crawl(directory):
     """
@@ -79,7 +82,7 @@ def transition_model(corpus: dict, page: str, damping_factor: float):
         # Sets the rest of the pages to be an equal amount with dampining factor added
         for p in corpus[page]:
             probabilities[p] = (1/len(list(corpus[page]))) * \
-                0.85 + (1 - damping_factor)/len(pages)
+                damping_factor + (1 - damping_factor)/len(pages)
 
     return probabilities
 
@@ -124,6 +127,8 @@ def sample_pagerank(corpus: dict, damping_factor: float, n: int):
         while str(pageRanks[page])[0] != '0':
             pageRanks[page] = pageRanks[page]/10
 
+    print(pageRanks)
+
     return pageRanks
 
 
@@ -162,6 +167,7 @@ def iterate_pagerank(corpus: dict, damping_factor: float):
         for page in pages:
             if abs(prevPageRank[page] - pageRank[page]) >= marginalDiff:
                 hasMarginalDiff = False
+                break
 
         # If there is a marginal difference, returns the pagerank dictionary
         if hasMarginalDiff:

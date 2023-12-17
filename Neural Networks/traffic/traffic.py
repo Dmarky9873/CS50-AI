@@ -5,13 +5,15 @@ import sys
 import tensorflow as tf
 import math
 from statistics import mean
+import matplotlib.pyplot as plt
+# import time
 
 from sklearn.model_selection import train_test_split
 
 EPOCHS = 10
 IMG_WIDTH = 30
 IMG_HEIGHT = 30
-NUM_CATEGORIES = 43
+NUM_CATEGORIES = 3
 TEST_SIZE = 0.4
 
 
@@ -21,7 +23,7 @@ def get_average_accuracy(testSize, model, x_train, y_train, x_test, y_test):
     for i in range(testSize):
         print("Test", str(i + 1) + '/' + str(testSize) + ':')
         trainingAccuracy = model.fit(x_train, y_train,
-                                     epochs=EPOCHS, verbose=0).history['accuracy'][EPOCHS - 1]
+                                     epochs=EPOCHS, verbose=1).history['accuracy'][EPOCHS - 1]
         testingAccuracy = model.evaluate(x_test,  y_test, verbose=0)[1]
         print("Training Accuracy =", trainingAccuracy,
               "\nTesting Accuracy =", testingAccuracy)
@@ -31,10 +33,25 @@ def get_average_accuracy(testSize, model, x_train, y_train, x_test, y_test):
     trainingAvg = round(mean(trainingAccuracies)*100, 1)
     testingAvg = round(mean(testingAccuracies)*100, 1)
     overfittingIndex = testingAvg - trainingAvg
-
+    trialNums = [x for x in range(testSize)]
     print("\n\nTesting Average Accuracy:", str(testingAvg) + '%')
     print("Training Average Accuracy:", str(trainingAvg) + '%')
     print("Overfitting Index:", round(overfittingIndex, 1))
+    
+    testingAvgList = []    
+    tra
+    for i in range(testSize):
+        testingAvgList.append(testingAvg)
+
+    plt.plot(trialNums, testingAccuracies, label="Tests")
+    plt.plot(trialNums, trainingAccuracies, label="Training")
+    plt.plot(trialNums, [testingAvg]*testSize, label="Testing Average")
+    plt.plot(trialNums, [trainingAvg]*testSize, label="Training Average")
+    plt.ylabel("Trial #")
+    plt.xlabel(r"% Accuracy")
+    plt.legend()
+    plt.savefig("tests.jpg")
+    print("Testing results saved as tests.jpg")
 
 
 def main():
@@ -223,6 +240,7 @@ def get_model():
         ),
         # Max-pooling layer, using 2x2 pool size
         tf.keras.layers.MaxPooling2D(pool_size=(2, 2)),
+        # tf.keras.layers.MaxPooling2D(pool_size=(2, 2)),
 
         # Flatten units
         tf.keras.layers.Flatten(),
