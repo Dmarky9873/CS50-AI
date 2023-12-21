@@ -96,55 +96,15 @@ class NimAI():
         best_future = self.best_future_reward(new_state)
         self.update_q_value(old_state, action, old, reward, best_future)
 
-    def result(self, state, action):
-        """Returns the result of `action` being performed on `state`.
-
-        Args:
-            state (list): list of states of all the values.
-            action (tuple): tuple (i, j) where i is the index where we are performing action j.
-
-        Returns:
-            list: returns the new state after `action` is performed.
-        """
-        # Performs action
-        state[action[0]] -= action[1]
-        return state
-
-    def isWinState(self, state):
-        """Gets whether or not `state` is a win state.
-
-        Args:
-            state (list): list of all the states of the values in the game.
-
-        Returns:
-            bool: Returns `True` if `state` is a win state and `False` if it is not.
-        """
-        # Loops through each state checking if it holds up with a win state.
-        found1 = False
-        for val in state:
-            # If the value is greater than one then it is impossible to win.
-            if val > 1:
-                return False
-            # If the value is one and we haven't found another value greater than one we set found1 to true and keep iterating.
-            # If we have found another value greater than one we know it is impossible to win.
-            elif val == 1:
-                if found1 == True:
-                    return False
-                found1 = True
-
-        # We know we will win after iterating through everything.
-        return True
-
     def get_q_value(self, state, action):
-        """Returns the Q-value for the state `state` and the action `action`.
+        """
+        Return the Q-value for the state `state` and the action `action`.
         If no Q-value exists yet in `self.q`, return 0.
         """
-
-        key = (tuple(state), action)
-
-        if key in self.q:
-            return self.q[key]
-        return 0
+        try:
+            return self.q[tuple(state), action]
+        except KeyError:
+            return 0
 
     def update_q_value(self, state, action, old_q, reward, future_rewards):
         """
@@ -161,10 +121,8 @@ class NimAI():
         `alpha` is the learning rate, and `new value estimate`
         is the sum of the current reward and estimated future rewards.
         """
-
-        newQ = old_q + self.alpha*((future_rewards + reward) - old_q)
-
-        self.q[(tuple(state), action)] = newQ
+        self.q[tuple(state), action] = old_q + self.alpha * \
+            ((reward + future_rewards) - old_q)
 
     def best_future_reward(self, state):
         """
@@ -176,26 +134,16 @@ class NimAI():
         Q-value in `self.q`. If there are no available actions in
         `state`, return 0.
         """
-
-        # Gets all actions in the given state
-        actions = Nim.available_actions(state)
-
-        rewards = []
-
-        # Goes through adding the value of each action
-        for action in actions:
-            currKey = (tuple(state), action)
-            if currKey in self.q:
-                rewards.append(self.q[currKey])
-            else:
-                rewards.append(0)
-
-        # If there are no actions, returns zero
-        if rewards == []:
+        avail_actions = Nim.available_actions(state)
+        if not avail_actions:
             return 0
+        best_action_val = float('-inf')
+        for action in avail_actions:
+            val = self.get_q_value(state, action)
+            if val > best_action_val:
+                best_action_val = val
 
-        # Returns the most valueable action
-        return max(rewards)
+        return best_action_val
 
     def choose_action(self, state, epsilon=True):
         """
@@ -213,24 +161,17 @@ class NimAI():
         options is an acceptable return value.
         """
 
-        actions = Nim.available_actions(state)
+        avail_actions = Nim.available_actions(state)
 
-        def chooseBestAction():
-            best = self.best_future_reward(state)
-            for action in actions:
-                currKey = (tuple(state), action)
-                if currKey not in self.q:
-                    if best == 0:
-                        return action
-                elif self.q[currKey] == best:
+        rand_number = random.random()
+
+        if rand_number <= self.epsilon and epsilon:
+            return random.choice(list(avail_actions))
+        else:
+            best_val = self.best_future_reward(state)
+            for action in avail_actions:
+                if self.get_q_value(state, action) == best_val:
                     return action
-
-        if epsilon:
-            num = random.random()
-
-            if num <= self.epsilon:
-                return random.choice(list(actions))
-        return chooseBestAction()
 
 
 def train(n):
