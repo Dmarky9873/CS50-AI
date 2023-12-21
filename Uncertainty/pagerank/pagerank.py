@@ -69,7 +69,7 @@ def transition_model(corpus: dict, page: str, damping_factor: float):
 
     # If the page has no links, return all the pages including the page were looking at
     # currently at an equal probability that adds to one.
-    if corpus[page] == {}:
+    if corpus[page] is None:
         for p in corpus:
             probabilities[p] = 1/len(corpus)
     else:
@@ -78,7 +78,7 @@ def transition_model(corpus: dict, page: str, damping_factor: float):
             probabilities[p] = (1 - damping_factor)/len(corpus)
         # Sets the rest of the pages to be an equal amount with dampining factor added
         for p in corpus[page]:
-            probabilities[p] += (1/len(corpus[page]))*damping_factor
+            probabilities[p] += damping_factor/len(corpus[page])
 
     return probabilities
 
@@ -127,7 +127,7 @@ def iterate_pagerank(corpus: dict, damping_factor: float):
     marg_diff = 0.001
     pages = list(corpus.keys())
     probabilities = dict()
-    for page in corpus.keys():
+    for page in pages:
         probabilities[page] = 1/len(pages)
 
     while not is_marg_diff:
