@@ -125,16 +125,17 @@ def iterate_pagerank(corpus: dict, damping_factor: float):
     """
     is_marg_diff = False
     marg_diff = 0.001
+    pages = list(corpus.keys())
     probabilities = dict()
     for page in corpus.keys():
-        probabilities[page] = 1/len(corpus.keys())
+        probabilities[page] = 1/len(pages)
 
     while not is_marg_diff:
         old_probabilities = copy.deepcopy(probabilities)
 
         for page in probabilities:
             probabilities[page] = PR(page, damping_factor, len(
-                list(corpus.keys())), probabilities, corpus)
+                pages), probabilities, corpus)
 
         for page, probability in probabilities.items():
             is_marg_diff = True
