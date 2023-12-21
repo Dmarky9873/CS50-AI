@@ -84,7 +84,8 @@ def transition_model(corpus: dict, page: str, damping_factor: float):
 
 
 def sample_pagerank(corpus: dict, damping_factor: float, n: int):
-    """Returns a PageRank value for each page by sampling `n` pages
+    """
+    Returns a PageRank value for each page by sampling `n` pages
     according to transition model, starting with a page at random.
 
     Returns:
