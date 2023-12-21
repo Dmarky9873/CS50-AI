@@ -114,8 +114,7 @@ def sample_pagerank(corpus: dict, damping_factor: float, n: int):
 
 
 def iterate_pagerank(corpus: dict, damping_factor: float):
-    """
-    Returns the PageRank values for each page by iteratively updating
+    """Returns the PageRank values for each page by iteratively updating
     PageRank values until convergence.
 
     Returns:
