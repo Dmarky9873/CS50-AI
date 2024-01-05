@@ -46,9 +46,10 @@ MONTHS = {
     'Dec': 11
 }
 
-TRAFFIC_TYPE = {
+VISITOR_TYPE = {
     'Returning_Visitor': 1,
-    'New_Visitor': 0
+    'New_Visitor': 0,
+    'Other': 0
 }
 
 TRUE_FALSE = {
@@ -79,7 +80,7 @@ def load_data(filename):
         - Browser, an integer
         - Region, an integer
         - TrafficType, an integer
-        - TrafficType, an integer 0 (not returning) or 1 (returning)
+        - VisitorType, an integer 0 (not returning) or 1 (returning)
         - Weekend, an integer 0 (if false) or 1 (if true)
 
     labels should be the corresponding list of labels, where each label
@@ -107,7 +108,8 @@ def load_data(filename):
             to_add.append(int(line['Browser']))
             to_add.append(int(line['Region']))
             to_add.append(int(line['TrafficType']))
-            to_add.append(TRUE_FALSE[str(line['Weekend'])])
+            to_add.append(VISITOR_TYPE[str(line['VisitorType'])])
+            to_add.append(TRUE_FALSE[line['Weekend']])
 
             evidence.append(to_add)
 
