@@ -31,6 +31,32 @@ def main():
     print(f"True Negative Rate: {100 * specificity:.2f}%")
 
 
+MONTHS = {
+    'Jan': 0,
+    'Feb': 1,
+    'Mar': 2,
+    'Apr': 3,
+    'May': 4,
+    'June': 5,
+    'Jul': 6,
+    'Aug': 7,
+    'Sep': 8,
+    'Oct': 9,
+    'Nov': 10,
+    'Dec': 11
+}
+
+TRAFFIC_TYPE = {
+    'Returning_Visitor': 1,
+    'New_Visitor': 0
+}
+
+TRUE_FALSE = {
+    'TRUE': 1,
+    'FALSE': 0
+}
+
+
 def load_data(filename):
     """
     Load shopping data from a CSV file `filename` and convert into a list of
@@ -53,13 +79,41 @@ def load_data(filename):
         - Browser, an integer
         - Region, an integer
         - TrafficType, an integer
-        - VisitorType, an integer 0 (not returning) or 1 (returning)
+        - TrafficType, an integer 0 (not returning) or 1 (returning)
         - Weekend, an integer 0 (if false) or 1 (if true)
 
     labels should be the corresponding list of labels, where each label
     is 1 if Revenue is true, and 0 otherwise.
     """
-    raise NotImplementedError
+    evidence = []
+    labels = []
+    with open(filename, newline='', encoding='UTF-8') as csv_file:
+        shopping_info = csv.DictReader(csv_file, delimiter=',')
+
+        for line in shopping_info:
+            to_add = []
+            to_add.append(int(line['Administrative']))
+            to_add.append(float(line['Administrative_Duration']))
+            to_add.append(int(line['Informational']))
+            to_add.append(float(line['Informational_Duration']))
+            to_add.append(int(line['ProductRelated']))
+            to_add.append(float(line['ProductRelated_Duration']))
+            to_add.append(float(line['BounceRates']))
+            to_add.append(float(line['ExitRates']))
+            to_add.append(float(line['PageValues']))
+            to_add.append(float(line['SpecialDay']))
+            to_add.append(MONTHS[str(line['Month'])])
+            to_add.append(int(line['OperatingSystems']))
+            to_add.append(int(line['Browser']))
+            to_add.append(int(line['Region']))
+            to_add.append(int(line['TrafficType']))
+            to_add.append(TRUE_FALSE[str(line['Weekend'])])
+
+            evidence.append(to_add)
+
+            labels.append(TRUE_FALSE[line['Revenue']])
+
+    return evidence, labels
 
 
 def train_model(evidence, labels):
@@ -67,7 +121,10 @@ def train_model(evidence, labels):
     Given a list of evidence lists and a list of labels, return a
     fitted k-nearest neighbor model (k=1) trained on the data.
     """
-    raise NotImplementedError
+    model = KNeighborsClassifier(n_neighbors=1)
+    model.fit(evidence, labels)
+
+    return model
 
 
 def evaluate(labels, predictions):
@@ -85,7 +142,19 @@ def evaluate(labels, predictions):
     representing the "true negative rate": the proportion of
     actual negative labels that were accurately identified.
     """
-    raise NotImplementedError
+    positive_labels = labels.count(1)
+    negative_labels = labels.count(0)
+
+    num_true_positive = 0
+    num_true_negative = 0
+    for i, prediction in enumerate(predictions):
+        if prediction == labels[i]:
+            if prediction == 1:
+                num_true_positive += 1
+            else:
+                num_true_negative += 1
+
+    return num_true_positive/positive_labels, num_true_negative/negative_labels
 
 
 if __name__ == "__main__":
