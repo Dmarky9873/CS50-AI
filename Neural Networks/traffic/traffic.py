@@ -1,8 +1,9 @@
-import cv2
-import numpy as np
 import os
 import sys
+import cv2
+import numpy as np
 import tensorflow as tf
+import math
 
 from sklearn.model_selection import train_test_split
 
@@ -44,6 +45,29 @@ def main():
         print(f"Model saved to {filename}.")
 
 
+def printProgressBar(iteration, total, prefix='', suffix='', decimals=1, length=100, fill='█', printEnd="\r"):
+    """
+    Call in a loop to create terminal progress bar
+    @params:
+        iteration   - Required  : current iteration (Int)
+        total       - Required  : total iterations (Int)
+        prefix      - Optional  : prefix string (Str)
+        suffix      - Optional  : suffix string (Str)
+        decimals    - Optional  : positive number of decimals in percent complete (Int)
+        length      - Optional  : character length of bar (Int)
+        fill        - Optional  : bar fill character (Str)
+        printEnd    - Optional  : end character (e.g. "\r", "\r\n") (Str)
+    """
+    percent = ("{0:." + str(decimals) + "f}").format(100 *
+                                                     (iteration / float(total)))
+    filledLength = int(length * iteration // total)
+    bar = fill * filledLength + '-' * (length - filledLength)
+    print(f'\r{prefix} |{bar}| {percent}% {suffix}', end=printEnd)
+    # Print New Line on Complete
+    if iteration == total:
+        print()
+
+
 def load_data(data_dir):
     """
     Load image data from directory `data_dir`.
@@ -58,7 +82,24 @@ def load_data(data_dir):
     be a list of integer labels, representing the categories for each of the
     corresponding `images`.
     """
-    raise NotImplementedError
+    images = []
+    labels = []
+    for category in range(NUM_CATEGORIES):
+        printProgressBar(category, NUM_CATEGORIES)
+        directory = os.path.join(data_dir, str(category))
+
+        for file in os.listdir(directory):
+
+            img_path = os.path.join(directory, file)
+
+            image = cv2.imread(img_path)
+            if image is not None:
+                image = cv2.resize(image, (IMG_WIDTH, IMG_HEIGHT))
+
+                images.append(image)
+                labels.append(category)
+
+    return images, labels
 
 
 def get_model():
@@ -67,7 +108,48 @@ def get_model():
     `input_shape` of the first layer is `(IMG_WIDTH, IMG_HEIGHT, 3)`.
     The output layer should have `NUM_CATEGORIES` units, one for each category.
     """
-    raise NotImplementedError
+
+    # Create a neural network
+    model = tf.keras.models.Sequential([
+        # Convolutional layer. Learn 32 filters using a 3x3 kernel
+        tf.keras.layers.Conv2D(
+            filters=128, kernel_size=(3, 3), activation="relu", input_shape=(IMG_WIDTH, IMG_HEIGHT, 3)
+        ),
+        tf.keras.layers.Conv2D(
+            filters=128, kernel_size=(3, 3), activation="relu"
+        ),
+        # Max-pooling layer, using 2x2 pool size
+        tf.keras.layers.MaxPooling2D(pool_size=(2, 2)),
+        # tf.keras.layers.MaxPooling2D(pool_size=(2, 2)),
+
+        # Flatten units
+        tf.keras.layers.Flatten(),
+        tf.keras.layers.Dropout(0.5),
+
+        # Adds hidden layers
+        tf.keras.layers.Dense(
+            math.sqrt(((IMG_WIDTH*IMG_HEIGHT*3)*NUM_CATEGORIES)), activation="relu"),
+        tf.keras.layers.Dense(
+            math.sqrt(((IMG_WIDTH*IMG_HEIGHT*3)*NUM_CATEGORIES)), activation="relu"),
+
+        tf.keras.layers.Dense(
+            math.sqrt(((IMG_WIDTH*IMG_HEIGHT*3)*NUM_CATEGORIES)), activation="relu"),
+
+        tf.keras.layers.Dense(
+            math.sqrt(((IMG_WIDTH*IMG_HEIGHT*3)*NUM_CATEGORIES)), activation="relu"),
+
+        # Add an output layer with output units for all signs
+        tf.keras.layers.Dense(NUM_CATEGORIES, activation="softmax")
+    ])
+
+    # Train neural network
+    model.compile(
+        optimizer="adam",
+        loss="binary_crossentropy",
+        metrics=["accuracy"]
+    )
+
+    return model
 
 
 if __name__ == "__main__":
