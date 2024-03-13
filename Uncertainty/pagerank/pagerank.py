@@ -123,7 +123,7 @@ def iterate_pagerank(corpus: dict, damping_factor: float):
     PageRank values will sum to 1.
     """
     is_marg_diff = False
-    marg_diff = 0.001
+    marg_diff = 0.0001
     pages = list(corpus.keys())
     probabilities = dict()
     for page in pages:
